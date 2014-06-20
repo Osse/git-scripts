@@ -1,0 +1,21 @@
+#!/usr/bin/env zsh
+# Show a log of commits unique to the given branch (or HEAD)
+# usage: git uniquelog [log options] [branch]
+
+if (( $# == 0 )) || [[ $@[-1] = -* ]]; then
+    branch=HEAD
+    logopts=( $@ )
+else
+    branch=$@[-1]
+    logopts=( $@[1,-2] )
+fi
+
+branch=$(git rev-parse --symbolic-full-name $branch)
+
+eval "others=($(git for-each-ref --shell --format='%(refname)' 'refs/heads/*'))"
+
+# Wonky zsh syntax to unset an element
+index=${(k)others[(r)$branch]}
+others[$index]=()
+
+git log $logopts $branch --not $others
