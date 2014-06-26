@@ -1,0 +1,24 @@
+#!/bin/bash
+
+tmpfile=$(mktemp)
+vimfile=$(mktemp)
+cd "$(git rev-parse --show-toplevel)"
+git diff > "$tmpfile"
+
+cat > "$vimfile" <<'EOF'
+function! Jump()
+    let plusline = search('^+++ b/', 'bn')
+    let alfaline = search('^@@', 'bn')
+
+    let file = getline(plusline)[6:]
+    let linenumber = matchstr(getline(alfaline), '+\zs\d\+') + 3
+
+    execute 'edit ' '+'.linenumber file
+endfunction
+nnoremap <buffer> <Enter> :call Jump()<Enter>
+setlocal filetype=diff
+EOF
+
+vim -S "$vimfile" "$tmpfile"
+
+rm "$tmpfile" "$vimfile"
