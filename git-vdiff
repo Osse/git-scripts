@@ -1,6 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Lets you view the regular 'git diff' output in Vim and jump to the relevant
 # file by pressing Enter
+
+print -l -- "$@"
+
+if (( $# )); then
+    (( $+@[(r)--staged] )) &&
+        die 'vdiff is incompatible with --staged'
+    dash=$@{[(r)--]}
+
+    if (( dash )); then
+        
+exit 0
 
 tmpfile=$(mktemp)
 vimfile=$(mktemp)
