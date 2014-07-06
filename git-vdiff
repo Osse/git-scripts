@@ -25,7 +25,7 @@ function! Jump()
     endif
     let linenumber = matchstr(getline(alfaline), '+\zs\d\+') + 3
 
-    execute 'edit ' '+'.linenumber file
+    execute 'edit' '+'.linenumber file
 endfunction
 nnoremap <buffer> <Enter> :call Jump()<Enter>
 setlocal filetype=diff
