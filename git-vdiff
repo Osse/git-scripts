@@ -9,10 +9,20 @@ cd "$(git rev-parse --show-toplevel)"
 
 cat > "$vimfile" <<'EOF'
 function! Jump()
-    let plusline = search('^+++ b/', 'bn')
-    let alfaline = search('^@@', 'bn')
+    if getline('.')[0:3] == 'diff'
+        let diffline = line('.')
+    else
+        let diffline = search('^diff --git', 'bn')
+    endif
+    let file = getline(diffline + 3)[6:]
 
-    let file = getline(plusline)[6:]
+    if getline('.')[0:1] == '@@'
+        let alfaline = line('.')
+    elseif line('.') >= diffline && line('.') <= diffline + 3
+        let alfaline = diffline + 4
+    else
+        let alfaline = search('^@@', 'bn')
+    endif
     let linenumber = matchstr(getline(alfaline), '+\zs\d\+') + 3
 
     execute 'edit ' '+'.linenumber file
