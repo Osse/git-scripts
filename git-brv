@@ -1,0 +1,61 @@
+#!/bin/bash
+# A sorted prettier branch -vv
+
+if [[ -t 1 ]]; then
+    green=$(tput setaf 2)
+    bgreen=$(tput setaf 10)
+    yellow=$(tput setaf 3)
+    blue=$(tput setaf 9)
+    reset=$(tput sgr0)
+fi
+cols=$(tput cols)
+
+declare -a branches upstreams dates messages hashes
+
+eval "branches=($(git for-each-ref --shell --format='%(refname:short)' 'refs/heads/*'))"
+eval "upstreams=($(git for-each-ref --shell --format='%(upstream:short)' 'refs/heads/*'))"
+
+i=0
+while IFS=$'\t' read -r date hash message; do
+    dates[i]=$date
+    hashes[i]=$hash
+    messages[i]=$message
+    ((i++))
+done < <(git log '--no-walk=unsorted' '--format=%ct%x09%h%x09%s' "${branches[@]}")
+max=$i
+
+current=$(git symbolic-ref -q --short HEAD)
+
+for ((i = 0; i < max; i++)); do
+    blen=${#branches[i]}
+    ulen=${#upstreams[i]}
+    (( blongest = blen > blongest ? blen : blongest ))
+    (( ulongest = ulen > ulongest ? ulen : ulongest ))
+done
+
+# Max length of message = width - Length of YYYY-MM-DD branch remote/branch hash
+(( maxlen = cols - (21 + blongest  + ulongest + dlen ) ))
+
+dfmt='%(%Y-%m-%d)T'
+bfmt='%s%-*s%s'
+ufmt='%s%-*s%s'
+hfmt='%s%s%s'
+mfmt='%s'
+fmt="$dfmt $bfmt $ufmt $hfmt $mfmt\n"
+
+for ((i = 0; i < max; i++)); do
+    if [[ ${branches[i]} = $current ]]; then
+	    color=$bgreen
+    else
+	    color=$green
+    fi
+
+    bargs=( "$color" "$blongest" "${branches[i]}" "$reset" )
+    uargs=( "$blue" "$ulongest" "${upstreams[i]}" "$reset" )
+    hargs=( "$yellow" "${hashes[i]}" "$reset" )
+
+    m=${messages[i]:0:maxlen}
+
+    printf "$fmt" "${dates[i]}" "${bargs[@]}" "${uargs[@]}" "${hargs[@]}" "$m"
+done | sort -r
+
