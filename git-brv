@@ -2,10 +2,10 @@
 # A sorted prettier branch -vv
 
 if [[ -t 1 ]]; then
-    green=$(tput setaf 2)
-    bgreen=$(tput setaf 10)
-    yellow=$(tput setaf 3)
-    blue=$(tput setaf 9)
+    color_branch_local=$(tput setaf 2)
+    color_branch_current=$(tput setaf 10)
+    color_diff_commit=$(tput setaf 3)
+    color_branch_upstream=$(tput setaf 9)
     reset=$(tput sgr0)
 fi
 cols=$(tput cols)
@@ -45,14 +45,14 @@ fmt="$dfmt $bfmt $ufmt $hfmt $mfmt\n"
 
 for ((i = 0; i < max; i++)); do
     if [[ ${branches[i]} = $current ]]; then
-	    color=$bgreen
+	    color=$color_branch_current
     else
-	    color=$green
+	    color=$color_branch_local
     fi
 
     bargs=( "$color" "$blongest" "${branches[i]}" "$reset" )
-    uargs=( "$blue" "$ulongest" "${upstreams[i]}" "$reset" )
-    hargs=( "$yellow" "${hashes[i]}" "$reset" )
+    uargs=( "$color_branch_upstream" "$ulongest" "${upstreams[i]}" "$reset" )
+    hargs=( "$color_diff_commit" "${hashes[i]}" "$reset" )
 
     m=${messages[i]:0:maxlen}
 
