@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Lets you view the regular 'git diff' output in Vim and jump to the relevant
 # file by pressing Enter
 
