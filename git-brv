@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # A sorted prettier branch -vv
 
 if [[ -t 1 ]]; then
