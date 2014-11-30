@@ -2,10 +2,10 @@
 # A sorted prettier branch -vv
 
 if [[ -t 1 ]]; then
-    color_branch_local=$(tput setaf 2)
-    color_branch_current=$(tput setaf 10)
-    color_diff_commit=$(tput setaf 3)
-    color_branch_upstream=$(tput setaf 9)
+    color_branch_local=$(git config --get-color color.branch.local green)
+    color_branch_current=$(git config --get-color color.branch.current "bold green")
+    color_diff_commit=$(git config --get-color color.diff.commit yellow)
+    color_branch_upstream=$(git config --get-color color.branch.upstream blue)
     reset=$(tput sgr0)
 fi
 cols=$(tput cols)
