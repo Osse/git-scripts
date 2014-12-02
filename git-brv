@@ -1,61 +1,60 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # A sorted prettier branch -vv
 
+if ! (( BASH_VERSINFO[0] > 4 ||
+        BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2 )); then
+    printf >&2 'This script requires bash 4.2 or newer\n'
+    exit 1
+fi
+
 if [[ -t 1 ]]; then
-    green=$(tput setaf 2)
-    bgreen=$(tput setaf 10)
-    yellow=$(tput setaf 3)
-    blue=$(tput setaf 9)
+    shopt -s checkwinsize
+    COLUMNS=$(tput cols)
+    color_branch_local=$(git config --get-color color.branch.local normal)
+    color_branch_current=$(git config --get-color color.branch.current green)
+    color_diff_commit=$(git config --get-color color.diff.commit yellow)
+    color_branch_upstream=$(git config --get-color color.branch.upstream blue)
     reset=$(tput sgr0)
 fi
-cols=$(tput cols)
 
-declare -a branches upstreams dates messages hashes
 
-eval "branches=($(git for-each-ref --shell --format='%(refname:short)' 'refs/heads/*'))"
-eval "upstreams=($(git for-each-ref --shell --format='%(upstream:short)' 'refs/heads/*'))"
+declare -A upstream date hash message
+eval "$(
+    git for-each-ref --format='upstream[%(refname:short)]=%(upstream:short)' \
+                     --shell 'refs/heads/*'
+)"
 
-i=0
-while IFS=$'\t' read -r date hash message; do
-    dates[i]=$date
-    hashes[i]=$hash
-    messages[i]=$message
-    ((i++))
-done < <(git log '--no-walk=unsorted' '--format=%ct%x09%h%x09%s' "${branches[@]}")
-max=$i
+for b in "${!upstream[@]}"; do
+    blen=${#b} ulen=${#upstream[$b]}
+    (( bwidth = blen > bwidth ? blen : bwidth ))
+    (( uwidth = ulen > uwidth ? ulen : uwidth ))
+    IFS=/ read -r 'date[$b]' 'hash[$b]' 'message[$b]' < <(
+        git log --no-walk=unsorted --format=%ct/%h/%s "$b"
+    )
+done
+
+mapfile -t ordered < <(
+    for b in "${!date[@]}"; do
+        printf '%d\t%s\n' "${date[$b]}" "$b"
+    done | sort -rn | cut -f2-
+)
 
 current=$(git symbolic-ref -q --short HEAD)
 
-for ((i = 0; i < max; i++)); do
-    blen=${#branches[i]}
-    ulen=${#upstreams[i]}
-    (( blongest = blen > blongest ? blen : blongest ))
-    (( ulongest = ulen > ulongest ? ulen : ulongest ))
-done
-
-# Max length of message = width - Length of YYYY-MM-DD branch remote/branch hash
-(( maxlen = cols - (21 + blongest  + ulongest + dlen ) ))
-
-dfmt='%(%Y-%m-%d)T'
-bfmt='%s%-*s%s'
-ufmt='%s%-*s%s'
-hfmt='%s%s%s'
-mfmt='%s'
-fmt="$dfmt $bfmt $ufmt $hfmt $mfmt\n"
-
-for ((i = 0; i < max; i++)); do
-    if [[ ${branches[i]} = $current ]]; then
-	    color=$bgreen
-    else
-	    color=$green
+for b in "${ordered[@]}"; do
+    branch_color=$color_branch_local
+    if [[ $b = "$current" ]]; then
+        branch_color=$color_branch_current
     fi
-
-    bargs=( "$color" "$blongest" "${branches[i]}" "$reset" )
-    uargs=( "$blue" "$ulongest" "${upstreams[i]}" "$reset" )
-    hargs=( "$yellow" "${hashes[i]}" "$reset" )
-
-    m=${messages[i]:0:maxlen}
-
-    printf "$fmt" "${dates[i]}" "${bargs[@]}" "${uargs[@]}" "${hargs[@]}" "$m"
-done | sort -r
-
+    if [[ -t 1 ]]; then
+        msg=${message[$b]:0:COLUMNS-bwidth-uwidth-21}
+    else
+        msg=${message[$b]}
+    fi
+    printf '%(%Y-%m-%d)T %s%*s%s %s%*s%s %s%s%s %s\n' \
+           "${date[$b]}" \
+           "$branch_color" "-$bwidth" "$b" "$reset" \
+           "$color_branch_upstream" "-$uwidth" "${upstream[$b]}" "$reset" \
+           "$color_diff_commit" "${hash[$b]}" "$reset" \
+           "$msg"
+done
