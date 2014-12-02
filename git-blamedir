@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+format='%Cblue%h%Creset %s'
+
+git ls-tree --name-only -z HEAD |
+while IFS= read -d '' file; do
+    git log -1 --pretty="$file"$'\t'"$format" -- "$file"
+done |
+column -t -s $'\t'
