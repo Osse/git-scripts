@@ -29,7 +29,7 @@ for b in "${!upstream[@]}"; do
     (( bwidth = blen > bwidth ? blen : bwidth ))
     (( uwidth = ulen > uwidth ? ulen : uwidth ))
     IFS=/ read -r 'date[$b]' 'hash[$b]' 'message[$b]' < <(
-        git log --no-walk=unsorted --format=%ct/%h/%s "$b"
+        git log --no-walk=unsorted --format=%ct/%h/%s "$b" --
     )
 done
 
