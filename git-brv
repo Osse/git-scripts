@@ -21,7 +21,7 @@ fi
 declare -A upstream date hash message
 eval "$(
     git for-each-ref --format='upstream[%(refname:short)]=%(upstream:short)' \
-                     --shell 'refs/heads/*'
+                     --shell 'refs/heads/**'
 )"
 
 for b in "${!upstream[@]}"; do
