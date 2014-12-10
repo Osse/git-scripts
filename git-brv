@@ -21,7 +21,7 @@ fi
 declare -A upstream date hash message
 eval "$(
     git for-each-ref --format='upstream[%(refname:short)]=%(upstream:short)' \
-                     --shell 'refs/heads/*'
+                     --shell 'refs/heads/**'
 )"
 
 for b in "${!upstream[@]}"; do
@@ -29,7 +29,7 @@ for b in "${!upstream[@]}"; do
     (( bwidth = blen > bwidth ? blen : bwidth ))
     (( uwidth = ulen > uwidth ? ulen : uwidth ))
     IFS=/ read -r 'date[$b]' 'hash[$b]' 'message[$b]' < <(
-        git log --no-walk=unsorted --format=%ct/%h/%s "$b"
+        git log --no-walk=unsorted --format=%ct/%h/%s "$b" --
     )
 done
 
