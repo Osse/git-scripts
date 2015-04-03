@@ -12,7 +12,7 @@ fi
 
 branch=$(git rev-parse --symbolic-full-name $branch)
 
-eval "others=($(git for-each-ref --shell --format='%(refname)' 'refs/heads/*'))"
+eval "others=($(git for-each-ref --shell --format='%(refname)' 'refs/heads/**' 'refs/remotes/**'))"
 
 # Wonky zsh syntax to unset an element
 index=${(k)others[(r)$branch]}
