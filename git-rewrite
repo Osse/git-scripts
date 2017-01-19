@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [[ $1 = -f ]]; then
+    export GIT_EDITOR='sed "/^\$/q"'
+    shift;
+fi
+
+if [[ $1 ]]; then
+    base=$1
+elif base=$(git rev-parse --quiet --verify "@{u}"); then
+    :
+else
+    echo Using master as upstream
+    base=master
+fi
+
+git rebase -i $(git merge-base HEAD "$base")
