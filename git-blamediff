@@ -1,0 +1,94 @@
+#!/usr/bin/zsh
+
+color_header=$(git config --get-color color.diff.meta bold)
+color_hunk_header=$(git config --get-color color.diff.frag cyan)
+color_new=$(git config --get-color color.diff.new green)
+color_old=$(git config --get-color color.diff.old red)
+reset=$(tput sgr0)
+
+printcolor() {
+    print -nr -- $1
+    print -r -- $2
+    print -nr -- $reset
+}
+
+printcolorn() {
+    print -nr -- $1
+    print -nr -- $2
+    print -nr -- $reset
+}
+
+read_n_lines() {
+    n=$1
+    local REPLY
+    reply=()
+    while (( n )) && IFS= read -r; do
+        reply+=($REPLY)
+        ((n--))
+    done
+}
+
+git_blame_kek() {
+    git blame --line-porcelain "$@" |
+    while read -t 0; do
+        read_n_lines 12
+    done
+}
+
+
+
+[[ $XPLEASE ]] && set -x
+git diff "$@" | while IFS= read -r line; do
+    if [[ $line = diff* || $line = index* ]]; then
+        printcolor $color_header $line
+        continue
+    fi
+
+    if [[ $line = ---* ]]; then
+        printcolor $color_header $line
+        continue
+    fi
+
+    if [[ $line = +++* ]]; then
+        file=${line#+++ b/}
+        printcolor $color_header $line
+        continue
+    fi
+
+    if [[ $line =~ '@@ -([[:digit:]]*),([[:digit:]]*) \+([[:digit:]]*),([[:digit:]]*) @@' ]]; then
+        colored=$MATCH;
+        rest=${line##$MATCH};
+
+        printcolorn $color_hunk_header $colored
+        print -r $rest
+
+
+        oldfrom=$match[1]
+        oldto=$match[2]
+
+        newfrom=$match[3]
+        newto=$match[4]
+
+        oldblame=( ${(f)"$(git blame -L $oldfrom,+$oldto HEAD $file)"} )
+        newblame=( ${(f)"$(git blame -L $newfrom,+$newto $file)"} )
+
+        oldindex=1
+        newindex=1
+
+        [[ $XPLEASE ]] && print -rl -- $oldblame ------------ $newblame -----------
+        continue
+    fi
+
+    #print -r -- $line
+
+    if [[ $line = ' '* ]]; then
+        print -r $newblame[newindex]
+        ((newindex++))
+        ((oldindex++))
+    elif [[ $line = '+'* ]]; then
+        printcolor $color_new $newblame[newindex++]
+    elif [[ $line = '-'* ]]; then
+        printcolor $color_old $oldblame[oldindex++]
+    fi
+done | less -FRSX
+
