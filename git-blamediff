@@ -1,67 +1,37 @@
 #!/usr/bin/zsh
 
+setopt extendedglob
+
+[[ $XPLEASE ]] && set -x
+
 color_header=$(git config --get-color color.diff.meta bold)
 color_hunk_header=$(git config --get-color color.diff.frag cyan)
 color_new=$(git config --get-color color.diff.new green)
 color_old=$(git config --get-color color.diff.old red)
-reset=$(tput sgr0)
 
-printcolor() {
-    print -nr -- $1
-    print -r -- $2
-    print -nr -- $reset
+
+printprefix() {
+    printf '%s' "$@" ' '
 }
 
-printcolorn() {
-    print -nr -- $1
-    print -nr -- $2
-    print -nr -- $reset
-}
-
-read_n_lines() {
-    n=$1
-    local REPLY
+parse_porcelain() {
     reply=()
-    while (( n )) && IFS= read -r; do
-        reply+=($REPLY)
-        ((n--))
+
+    output=(${(f)"$(git --no-pager blame --porcelain -L "$@")"})
+    output=(${(M)output:#[a-f0-9](#c40)*})
+
+    local line
+    for line in $output; do
+        reply+=(${line:0:7})
     done
 }
 
-git_blame_kek() {
-    git blame --line-porcelain "$@" |
-    while read -t 0; do
-        read_n_lines 12
-    done
-}
-
-
-
-[[ $XPLEASE ]] && set -x
-git diff "$@" | while IFS= read -r line; do
-    if [[ $line = diff* || $line = index* ]]; then
-        printcolor $color_header $line
-        continue
-    fi
-
-    if [[ $line = ---* ]]; then
-        printcolor $color_header $line
-        continue
-    fi
-
-    if [[ $line = +++* ]]; then
-        file=${line#+++ b/}
-        printcolor $color_header $line
-        continue
-    fi
-
-    if [[ $line =~ '@@ -([[:digit:]]*),([[:digit:]]*) \+([[:digit:]]*),([[:digit:]]*) @@' ]]; then
-        colored=$MATCH;
-        rest=${line##$MATCH};
-
-        printcolorn $color_hunk_header $colored
-        print -r $rest
-
+git diff --color "$@" | while IFS= read -r line; do
+    if [[ $line = $color_header+++* ]]; then
+        file=${line#*+++ b/}
+        file=${file%$'\e'*}
+    elif [[ $line = $color_hunk_header@@* ]]; then
+        [[ $line =~ '@@ -([[:digit:]]*),([[:digit:]]*) \+([[:digit:]]*),([[:digit:]]*) @@' ]]
 
         oldfrom=$match[1]
         oldto=$match[2]
@@ -69,26 +39,22 @@ git diff "$@" | while IFS= read -r line; do
         newfrom=$match[3]
         newto=$match[4]
 
-        oldblame=( ${(f)"$(git blame -L $oldfrom,+$oldto HEAD $file)"} )
-        newblame=( ${(f)"$(git blame -L $newfrom,+$newto $file)"} )
+        parse_porcelain $oldfrom,+$oldto HEAD $file
+        oldblame=($reply)
+        parse_porcelain $newfrom,+$newto $file
+        newblame=($reply)
 
         oldindex=1
         newindex=1
-
-        [[ $XPLEASE ]] && print -rl -- $oldblame ------------ $newblame -----------
-        continue
-    fi
-
-    #print -r -- $line
-
-    if [[ $line = ' '* ]]; then
-        print -r $newblame[newindex]
+    elif [[ $line = ' '* ]]; then
+        printprefix $newblame[newindex]
         ((newindex++))
         ((oldindex++))
-    elif [[ $line = '+'* ]]; then
-        printcolor $color_new $newblame[newindex++]
-    elif [[ $line = '-'* ]]; then
-        printcolor $color_old $oldblame[oldindex++]
+    elif [[ $line = $color_old-* ]]; then
+        printprefix $color_old $oldblame[oldindex++]
+    elif [[ $line = $color_new+* ]]; then
+        printprefix $color_new $newblame[newindex++]
     fi
-done | less -FRSX
 
+    print -r $line
+done
