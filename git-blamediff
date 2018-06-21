@@ -9,6 +9,7 @@ color_hunk_header=$(git config --get-color color.diff.frag cyan)
 color_new=$(git config --get-color color.diff.new green)
 color_old=$(git config --get-color color.diff.old red)
 
+toplevel=$(git rev-parse --show-toplevel)
 
 printprefix() {
     printf '%s' "$@" ' '
@@ -17,7 +18,7 @@ printprefix() {
 parse_porcelain() {
     reply=()
 
-    output=(${(f)"$(git --no-pager blame --porcelain -L "$@")"})
+    output=(${(f)"$(git -C $toplevel --no-pager blame --porcelain -L "$@")"})
     output=(${(M)output:#[a-f0-9](#c40)*})
 
     local line
@@ -39,9 +40,9 @@ git diff --color "$@" | while IFS= read -r line; do
         newfrom=$match[3]
         newto=$match[4]
 
-        parse_porcelain $oldfrom,+$oldto HEAD $file
+        parse_porcelain $oldfrom,+$oldto HEAD -- $file
         oldblame=($reply)
-        parse_porcelain $newfrom,+$newto $file
+        parse_porcelain $newfrom,+$newto -- $file
         newblame=($reply)
 
         oldindex=1
