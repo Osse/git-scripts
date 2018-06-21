@@ -28,7 +28,7 @@ parse_porcelain() {
 
 git diff --color "$@" | while IFS= read -r line; do
     if [[ $line = $color_header+++* ]]; then
-        file=${line#*+++ b/}
+        file=${line#*+++ [iwb2]/}
         file=${file%$'\e'*}
     elif [[ $line = $color_hunk_header@@* ]]; then
         [[ $line =~ '@@ -([[:digit:]]*),([[:digit:]]*) \+([[:digit:]]*),([[:digit:]]*) @@' ]]
