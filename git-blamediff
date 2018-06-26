@@ -32,13 +32,21 @@ git diff --color "$@" | while IFS= read -r line; do
         file=${line#*+++ [iwb2]/}
         file=${file%$'\e'*}
     elif [[ $line = $color_hunk_header@@* ]]; then
-        [[ $line =~ '@@ -([[:digit:]]*),([[:digit:]]*) \+([[:digit:]]*),([[:digit:]]*) @@' ]]
+        [[ $line =~ '@@ -([[:digit:]]*)(,[[:digit:]]*)? \+([[:digit:]]*)(,[[:digit:]]*)? @@' ]]
 
         oldfrom=$match[1]
-        oldto=$match[2]
+        if [[ -n $match[2] && $match[2] != ,0  ]]; then
+            oldto=${match[2]#,}
+        else
+            oldto=$oldfrom
+        fi
 
         newfrom=$match[3]
-        newto=$match[4]
+        if [[ -n $match[4] && $match[2] != ,0 ]]; then
+            newto=${match[4]#,}
+        else
+            newto=$newfrom
+        fi
 
         parse_porcelain $oldfrom,$oldto HEAD -- $file
         oldblame=($reply)
