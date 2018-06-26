@@ -40,9 +40,9 @@ git diff --color "$@" | while IFS= read -r line; do
         newfrom=$match[3]
         newto=$match[4]
 
-        parse_porcelain $oldfrom,+$oldto HEAD -- $file
+        parse_porcelain $oldfrom,$oldto HEAD -- $file
         oldblame=($reply)
-        parse_porcelain $newfrom,+$newto -- $file
+        parse_porcelain $newfrom,$newto -- $file
         newblame=($reply)
 
         oldindex=1
