@@ -27,6 +27,14 @@ parse_porcelain() {
     done
 }
 
+revs=(${(f)"$(git rev-parse --revs-only "$@")"})
+
+if (( $#revs == 0 )); then
+    revs=(HEAD '')
+elif (( $#revs == 1 )); then
+    revs=($revs '')
+fi
+
 git diff --color "$@" | while IFS= read -r line; do
     if [[ $line = $color_header+++* ]]; then
         file=${line#*+++ [iwb2]/}
@@ -48,9 +56,9 @@ git diff --color "$@" | while IFS= read -r line; do
             newto=$newfrom
         fi
 
-        parse_porcelain $oldfrom,+$oldto HEAD -- $file
+        parse_porcelain $oldfrom,+$oldto $revs[1] -- $file
         oldblame=($reply)
-        parse_porcelain $newfrom,+$newto -- $file
+        parse_porcelain $newfrom,+$newto $revs[2] -- $file
         newblame=($reply)
 
         oldindex=1
