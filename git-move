@@ -18,7 +18,7 @@ branch=$1
 shift
 
 if (( $# )); then
-    commits=( $(git rev-parse --no-walk $@)  )
+    commits=( $(git rev-parse $@) )
     commits=( ${(Oa)commits} )
 else
     commits=( $current )
