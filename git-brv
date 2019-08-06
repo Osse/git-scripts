@@ -31,6 +31,8 @@ for b in "${!upstream[@]}"; do
     IFS=/ read -r 'date[$b]' 'hash[$b]' 'message[$b]' < <(
         git log --no-walk=unsorted --format=%ct/%h/%s "$b" --
     )
+    hlen=${#hash[$b]}
+    (( hwidth = hlen > hwidth ? hlen : hwidth ))
 done
 
 mapfile -t ordered < <(
@@ -47,14 +49,14 @@ for b in "${ordered[@]}"; do
         branch_color=$color_branch_current
     fi
     if [[ -t 1 ]]; then
-        msg=${message[$b]:0:COLUMNS-bwidth-uwidth-21}
+        msg=${message[$b]:0:COLUMNS-bwidth-uwidth-hwidth-14}
     else
         msg=${message[$b]}
     fi
-    printf '%(%Y-%m-%d)T %s%*s%s %s%*s%s %s%s%s %s\n' \
+    printf '%(%Y-%m-%d)T %s%*s%s %s%*s%s %s%*s%s %s\n' \
            "${date[$b]}" \
            "$branch_color" "-$bwidth" "$b" "$reset" \
            "$color_branch_upstream" "-$uwidth" "${upstream[$b]}" "$reset" \
-           "$color_diff_commit" "${hash[$b]}" "$reset" \
+           "$color_diff_commit" "-$hwidth" "${hash[$b]}" "$reset" \
            "$msg"
 done
