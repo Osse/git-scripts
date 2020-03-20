@@ -1,12 +1,16 @@
 #!/bin/bash
 
 if [[ $1 = -f ]]; then
-    export GIT_EDITOR='sed "/^\$/q"'
+    export GIT_EDITOR='printf "\r"; sed "/^\$/q"'
     shift;
 fi
 
-if [[ $1 ]]; then
+if [[ $1 = [^-]* ]]; then
     base=$1
+elif [[ $1 = -b ]]; then
+    branch=$(git symbolic-ref --short HEAD)
+    firstcommit=$(git rev-list --topo-order --reverse $branch --not --exclude=$branch --branches | head -n 1)
+    base="$firstcommit~"
 elif base=$(git rev-parse --quiet --verify "@{u}"); then
     :
 else
@@ -14,4 +18,4 @@ else
     base=master
 fi
 
-git rebase -i $(git merge-base HEAD "$base")
+git rebase --keep-base -i "$base"
