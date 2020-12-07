@@ -12,7 +12,4 @@ fi
 
 branch=$(git rev-parse --symbolic-full-name $branch)
 
-format="%(if:equals=$branch)%(refname)%(then)%(refname)%(else)^%(refname)%(end)"
-eval "branches=($(git for-each-ref --shell --format="$format" 'refs/heads/**' 'refs/remotes/**'))"
-
-git log $logopts $branches
+git log $logopts $branch --not --exclude=$branch --all
