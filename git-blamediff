@@ -4,10 +4,14 @@ setopt extendedglob
 
 [[ $XPLEASE ]] && set -x
 
-color_header=$(git config --get-color color.diff.meta bold)
-color_hunk_header=$(git config --get-color color.diff.frag cyan)
-color_new=$(git config --get-color color.diff.new green)
-color_old=$(git config --get-color color.diff.old red)
+if [[ -t 1 ]]; then
+    color_header=$(git config --get-color color.diff.meta bold)
+    color_hunk_header=$(git config --get-color color.diff.frag cyan)
+    color_new=$(git config --get-color color.diff.new green)
+    color_old=$(git config --get-color color.diff.old red)
+
+    color=1
+fi
 
 toplevel=$(git rev-parse --show-toplevel)
 
@@ -35,7 +39,7 @@ elif (( $#revs == 1 )); then
     revs=($revs '')
 fi
 
-git diff --color "$@" | while IFS= read -r line; do
+git diff ${color:+--color} "$@" | while IFS= read -r line; do
     if [[ $line = $color_header+++* ]]; then
         file=${line#*+++ [iwb2]/}
         file=${file%$'\e'*}
