@@ -1,5 +1,9 @@
 #!/usr/bin/env zsh
 
+if [[ $1 == --fetch ]]; then
+    git fetch --all
+fi
+
 # Associative array of branches and upstreams. The keys are the local branches
 # and the values are their upstreams (if any)
 declare -A upstreams
@@ -20,8 +24,8 @@ for k in ${(k)upstreams[(R)*?]}; do
 
     # If grep found an arrow then the branch was FFed. Output a diffstat as
     # git-merge would
-    if (( $? == 0 )); then
-        git --no-pager diff --stat $k'@{1}' $k
+    if (( pipestatus[1] == 0 && pipestatus[2] == 0 )); then
+        # git --no-pager diff --stat $k'@{1}' $k
     else
         echo ${k##*/} is up-to-date
     fi
