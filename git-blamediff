@@ -4,7 +4,7 @@ setopt extendedglob
 
 [[ $XPLEASE ]] && set -x
 
-if [[ -t 1 ]]; then
+if [[ -t 1 ]] || (( $@[(I)--color] > 0 )); then
     color_header=$(git config --get-color color.diff.meta bold)
     color_hunk_header=$(git config --get-color color.diff.frag cyan)
     color_new=$(git config --get-color color.diff.new green)
