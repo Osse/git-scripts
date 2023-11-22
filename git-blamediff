@@ -40,11 +40,17 @@ elif (( $#revs == 1 )); then
 fi
 
 git diff ${color:+--color} "$@" | while IFS= read -r line; do
-    if [[ $line = $color_header+++* ]]; then
-        file=${line#*+++ [iwb2]/}
+    if [[ $line = ${color_header}diff\ --git* ]]; then
+        IFS= read -r index
+        IFS= read -r a_line
+        IFS= read -r b_line
+        IFS= read -r header
+        print -lr -- $line $index $a_line $b_line $header
+
+        file=${b_line#*+++ [iwb2]/}
         file=${file%$'\e'*}
-    elif [[ $line = $color_hunk_header@@* ]]; then
-        [[ $line =~ '@@ -([[:digit:]]*)(,[[:digit:]]*)? \+([[:digit:]]*)(,[[:digit:]]*)? @@' ]]
+
+        [[ $header =~ '@@ -([[:digit:]]*)(,[[:digit:]]*)? \+([[:digit:]]*)(,[[:digit:]]*)? @@' ]]
 
         oldfrom=$match[1]
         if [[ -n $match[2] && $match[2] != ,0  ]]; then
@@ -67,15 +73,17 @@ git diff ${color:+--color} "$@" | while IFS= read -r line; do
 
         oldindex=1
         newindex=1
-    elif [[ $line = ' '* ]]; then
-        printprefix $newblame[newindex]
-        ((newindex++))
-        ((oldindex++))
-    elif [[ $line = $color_old-* ]]; then
-        printprefix $color_old $oldblame[oldindex++]
-    elif [[ $line = $color_new+* ]]; then
-        printprefix $color_new $newblame[newindex++]
-    fi
+    else
+        if [[ $line = ' '* ]]; then
+            printprefix $newblame[newindex]
+            ((newindex++))
+            ((oldindex++))
+        elif [[ $line = $color_old-* ]]; then
+            printprefix $color_old $oldblame[oldindex++]
+        elif [[ $line = $color_new+* ]]; then
+            printprefix $color_new $newblame[newindex++]
+        fi
 
-    print -r -- $line
+        print -r -- $line
+    fi
 done
