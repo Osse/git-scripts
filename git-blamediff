@@ -77,5 +77,5 @@ git diff ${color:+--color} "$@" | while IFS= read -r line; do
         printprefix $color_new $newblame[newindex++]
     fi
 
-    print -r $line
+    print -r -- $line
 done
