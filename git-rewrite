@@ -1,21 +1,55 @@
 #!/bin/bash
 
-if [[ $1 = -f ]]; then
-    export GIT_EDITOR='printf "\r"; sed "/^\$/q"'
-    shift;
-fi
+rebase_opts=()
 
-if [[ $1 = [^-]* ]]; then
-    base=$1
-elif [[ $1 = -b ]]; then
-    branch=$(git symbolic-ref --short HEAD)
-    firstcommit=$(git rev-list --topo-order --reverse $branch --not --exclude=$branch --branches | head -n 1)
-    base="$firstcommit~"
-elif base=$(git rev-parse --quiet --verify "@{u}"); then
-    :
-else
-    echo Using master as upstream
+base=
+debug=0
+find_base=0
+use_upstream=0
+use_master=0
+use_origin_master=0
+
+setup_force() {
+    export GIT_SEQUENCE_EDITOR='printf "\r"; sed "/^\$/q"'
+}
+
+while :; do
+    case $1 in
+        -d|--debug)
+            debug=1 ;;
+        -m|--master)
+            use_master=1 ;;
+        -o|--origin-master)
+            use_origin_master=1 ;;
+        -f|--force)
+            setup_force ;;
+        -?*)
+            rebase_opts+=("$1") ;;
+        *)
+            break
+    esac
+    shift
+done
+
+if (( use_master )); then
     base=master
+    method=argument
+elif (( use_origin_master )); then
+    base=origin/master
+    method=argument
+elif [[ $1 ]]; then
+    base=$1
+    method=argument
+elif base=$(git rev-parse --quiet --verify "@{u}" 2>/dev/null); then
+    method=upstream
+elif branch=$(git symbolic-ref --short HEAD) &&
+     firstcommit=$(git rev-list --topo-order --reverse $branch --not --exclude=$branch --branches | head -n 1); then
+    base="$firstcommit~"
+    method=discovery
 fi
 
-git rebase --keep-base -i "$base"
+if (( debug )); then
+    printf 'Using base %s by %s\n' "$base" "$method"
+fi
+
+git rebase --update-refs --autostash "${rebase_opts[@]}" --keep-base -i "$base"
