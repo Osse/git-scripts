@@ -25,10 +25,18 @@ branch="
 %(color:reset)
 "
 
+upstream="
+%(if:equals=[gone]) %(upstream:track) %(then)
+    XX
+%(else)
+    %(upstream:trackshort)
+%(end)
+"
+
 columns=(
     "%(creatordate:format:%Y-%m-%d)"
     "${branch//[[:space:]]/}"
-    "%(color:bold blue)%(align:2)%(upstream:trackshort)%(end)%(color:reset)"
+    "%(color:bold blue)%(align:2)${upstream//[[:space:]]/}%(end)%(color:reset)"
     "%(color:red)%(align:$len2)%(upstream:short)%(end)%(color:reset)"
     "%(color:yellow)%(objectname:short=10)%(color:reset)"
     "%(subject)"
