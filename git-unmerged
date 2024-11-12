@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 mapfile -d '' -t files < <(git diff --relative --name-only --diff-filter=U -z)
-vim -q <(grep -nH '^<<<<<<' "${files[@]}") +copen
+$EDITOR -q <(grep -nH '^<<<<<<' "${files[@]}") +copen
 
 exit
 
