@@ -44,14 +44,11 @@ git diff ${color:+--color} "$@" | while IFS= read -r line; do
         IFS= read -r index
         IFS= read -r a_line
         IFS= read -r b_line
-        IFS= read -r header
-        print -lr -- $line $index $a_line $b_line $header
 
         file=${b_line#*+++ [iwb2]/}
         file=${file%$'\e'*}
-
-        [[ $header =~ '@@ -([[:digit:]]*)(,[[:digit:]]*)? \+([[:digit:]]*)(,[[:digit:]]*)? @@' ]]
-
+        print -lr -- $line $index $a_line $b_line
+    elif [[ $line =~ '@@ -([[:digit:]]*)(,[[:digit:]]*)? \+([[:digit:]]*)(,[[:digit:]]*)? @@' ]]; then
         oldfrom=$match[1]
         if [[ -n $match[2] && $match[2] != ,0  ]]; then
             oldto=${match[2]#,}
@@ -73,6 +70,8 @@ git diff ${color:+--color} "$@" | while IFS= read -r line; do
 
         oldindex=1
         newindex=1
+
+        print -r -- $line
     else
         if [[ $line = ' '* ]]; then
             printprefix $newblame[newindex]
