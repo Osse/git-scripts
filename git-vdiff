@@ -41,8 +41,7 @@ function! Jump()
     endfor
 
     let linenumber = matchstr(getline(alfaline), '+\zs\d\+') + linecount - 1
-
-    execute 'edit' '+'.linenumber file
+    execute 'split' '+call\ cursor('.linenumber.','.(col('.') - 1).')' file
 endfunction
 nnoremap <buffer> <Enter> :call Jump()<Enter>
 setlocal filetype=diff
