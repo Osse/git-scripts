@@ -2,14 +2,12 @@
 # Lets you view the regular 'git diff' output in Vim and jump to the relevant
 # file by pressing Enter
 
-git diff --quiet && exit
+worktree_root=$(git rev-parse --show-toplevel) || exit
+git diff --quiet "$@" >/dev/null 2>&1 && exit
 
-tmpfile=$(mktemp)
-vimfile=$(mktemp)
-git diff "$@" > "$tmpfile"
-cd "$(git rev-parse --show-toplevel)"
+tmpdir=$(mktemp -d) && trap 'rm -rf "$tmpdir"' EXIT || exit
 
-cat > "$vimfile" <<'EOF'
+cat > "$tmpdir/jump.vim" <<'EOF'
 function! Jump()
     let selected_lineno = line('.')
     let linecount = 0
@@ -44,9 +42,16 @@ function! Jump()
     execute 'split' '+call\ cursor('.linenumber.','.(col('.') - 1).')' file
 endfunction
 nnoremap <buffer> <Enter> :call Jump()<Enter>
+nnoremap <buffer> <C-l> :!eval "$VDIFF_CMD"<Enter>
 setlocal filetype=diff
+set autoread
 EOF
+printf -v VDIFF_CMD 'cd %q && git diff %s > %q' \
+    "$PWD" \
+    "$(for arg ; do printf '%q ' "$arg" ; done)" \
+    "$tmpdir/diff"
+export VDIFF_CMD
 
-vim -S "$vimfile" "$tmpfile"
-
-rm "$tmpfile" "$vimfile"
+git diff "$@" > "$tmpdir/diff" &&
+cd -- "${worktree_root:?}" &&
+vim -S "$tmpdir/jump.vim" "$tmpdir/diff"
