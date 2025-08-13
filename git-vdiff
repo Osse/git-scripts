@@ -14,17 +14,22 @@ function! Jump()
     let selected_lineno = line('.')
     let linecount = 0
 
-    if getline('.')[0:3] == 'diff'
-        let diffline = line('.')
+    if getline('.')[0:9] == 'diff --git'
+        let diffline = selected_lineno
     else
         let diffline = search('^diff --git', 'bn')
     endif
-    let file = getline(diffline + 3)[6:]
 
-    if getline('.')[0:1] == '@@'
-        let alfaline = line('.')
-    elseif line('.') >= diffline && line('.') <= diffline + 3
-        let alfaline = diffline + 4
+    let plusline = diffline + 1
+    while getline(plusline)[0:3] != '+++ '
+        let plusline += 1
+    endwhile
+    let file = getline(plusline)[6:]
+
+    if selected_lineno <= plusline
+        let alfaline = plusline + 1
+    elseif getline('.')[0:1] == '@@'
+        let alfaline = selected_lineno
     else
         let alfaline = search('^@@', 'bn')
     endif
