@@ -4,7 +4,17 @@ setopt extendedglob
 
 [[ $XPLEASE ]] && set -x
 
-if [[ -t 1 ]] || (( $@[(I)--color] > 0 )); then
+declare -A color_settings=( $(git config  --get-regexp '^color.(ui|diff)$' ) )
+
+color_setting_is() {
+    local value=$1
+    [[ $color_settings[color.diff] = $value ]] || { [[ -z $color_settings[color.diff] ]] &&
+        [[ $color_settings[color.ui]  = $value ]] }
+}
+
+if (( $@[(I)--color] > 0 )) ||
+    { [[ -t 1 ]] && ! color_setting_is 'never' } ||
+        color_setting_is 'always'; then
     color_header=$(git config --get-color color.diff.meta bold)
     color_hunk_header=$(git config --get-color color.diff.frag cyan)
     color_new=$(git config --get-color color.diff.new green)
