@@ -23,6 +23,10 @@ while :; do
             use_origin_master=1 ;;
         -f|--force)
             setup_force ;;
+        -x)
+            rebase_opts+=("$1" "$2")
+            shift
+            ;;
         -?*)
             rebase_opts+=("$1") ;;
         *)

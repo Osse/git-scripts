@@ -1,10 +1,23 @@
 #!/bin/bash
 
+patterns=()
+
+while getopts :l: opt; do
+    case $opt in
+        l) patterns+=(-l "$OPTARG") ;;
+        \?) exit 1 ;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
 while read -r b1 b2; do
     n1=${#b1} n2=${#b2}
     len1=$(( n1 > len1 ? n1 : len1))
     len2=$(( n2 > len2 ? n2 : len2))
-done < <(git branch --format='%(refname:short) %(upstream:short)')
+done < <(git branch "${patterns[@]}" --format='%(refname:short) %(upstream:short)')
+
+[[ -v len1 ]] || exit 0
 
 
 branch="
@@ -42,4 +55,4 @@ columns=(
     "%(subject)"
 )
 
-git branch --sort='-creatordate' --format="${columns[*]}"
+git branch --sort='-creatordate' --format="${columns[*]}" "${patterns[@]}"
