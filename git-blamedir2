@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# The data you want as a valid git log format string (full hash by default)
+data="${1:-%H}"
+
+# The subdirectory (root of repo by default)
+dir="${2:-:}/"
+
+git log --format="%x09%x09$data" --name-only -- "$dir" |
+awk -v INPUT="$(git ls-tree --name-only HEAD -- "$dir")" '
+BEGIN {
+     n = split(INPUT, a, "\n")
+     for (i = 1; i <= n; i++) {
+        files[a[i]] = "meh"
+    }
+}
+
+# Next data in the output. Check if we are done first
+/^\t\t/ {
+    cont = 0
+
+    for (i in files) {
+        if (files[i] == "meh") {
+            cont = 1
+        }
+    }
+
+    if (cont == 0) {
+        # All files have data associated
+        exit
+    }
+
+    current_data = substr($0, 3)
+    next
+}
+
+# Any non empty line at this point is a path
+/./ {
+    for (i in files) {
+        # File match (or start match if directory)
+        if (index($0, i) == 1 && files[i] == "meh") {
+            files[i] = current_data
+        }
+    }
+}
+
+END  {
+    for (i in files)  {
+        print i, files[i]
+    }
+}
+'
